@@ -1,8 +1,9 @@
-from django.contrib import admin
 from django.urls import path
-from pereval.views import SubmitDataView
+from pereval.views import (SubmitDataView, PerevalDetailView)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('submitData/', SubmitDataView.as_view(), name='submit-data'),
+    path('submitData/<int:pk>/', PerevalDetailView.as_view(), name='pereval-detail'),
+    #path('submitData/<int:pk>/', PerevalUpdateView.as_view(), name='pereval-update'),
+    #path('submitData/', UserPerevalsListView.as_view(), name='user-perevals-list'),
 ]

@@ -1,7 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from .models import Pereval
 from .serializers import PerevalSerializer
+from rest_framework.generics import RetrieveAPIView
 
 class SubmitDataView(APIView):
     def post(self, request):
@@ -18,3 +20,8 @@ class SubmitDataView(APIView):
             'message': serializer.errors,
             'id': None
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PerevalDetailView(RetrieveAPIView):
+    queryset = Pereval.objects.all()
+    serializer_class = PerevalSerializer
