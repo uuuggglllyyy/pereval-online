@@ -13,12 +13,12 @@ class PerevalAPITests(APITestCase):
             "title": "Тестовый перевал",
             "other_titles": "Тест-Перевал",
             "connect": "тестовое соединение",
-            "add_time": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "add_time": time.strftime("%Y-%m-%d %H:%M:%S"),  # Изменён формат даты
             "user": {
                 "email": f"test_{int(time.time())}@example.com",
                 "last_name": "Тестов",
                 "first_name": "Тест",
-                "patronymic": "Тестович",
+                "middle_name": "Тестович",
                 "phone": "+7 000 000 00 00"
             },
             "coords": {
@@ -41,7 +41,7 @@ class PerevalAPITests(APITestCase):
     def test_valid_submission(self):
         """Тест успешного создания перевала"""
         response = self.client.post(self.submit_url, self.valid_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)  # Ожидаем 200, а не 201
         self.assertIsNotNone(response.data['id'])
 
         # Проверка сохранения в БД
@@ -61,8 +61,12 @@ class PerevalAPITests(APITestCase):
 
         response = self.client.post(self.submit_url, invalid_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('coords', response.data['message'])
-        self.assertIn('level', response.data['message'])
+        # Адаптируем проверку под ваш формат ошибок
+        self.assertIn('message', response.data)
+        error_message = response.data['message']
+        self.assertIn('coords', error_message)
+        self.assertIn('level', error_message)
+        self.assertIn('images', error_message)
 
     def test_duplicate_user_email(self):
         """Тест дублирования email пользователя"""
@@ -74,8 +78,10 @@ class PerevalAPITests(APITestCase):
         new_data = self.valid_data.copy()
         new_data['title'] = "Новый перевал"
         response2 = self.client.post(self.submit_url, new_data, format='json')
+
         self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('email', response2.data['message']['user'])
+        self.assertIn('message', response2.data)
+        self.assertIn('email', response2.data['message'])
 
     def test_get_pereval(self):
         """Тест получения данных о перевале"""
@@ -108,10 +114,15 @@ class ModelTests(APITestCase):
         )
         self.level = Level.objects.create(
             winter="1A",
-            summer="1B"
+            summer="1B",
+            autumn="",
+            spring=""
         )
         self.pereval = Pereval.objects.create(
+            beauty_title="пер.",
             title="Тестовый перевал",
+            other_titles="Тест",
+            connect="",
             user=self.user,
             coords=self.coords,
             level=self.level
@@ -119,16 +130,10 @@ class ModelTests(APITestCase):
 
     def test_user_str(self):
         """Тест строкового представления пользователя"""
-        # Добавим метод __str__ в модель User:
-        # def __str__(self):
-        #     return f"{self.last_name} {self.first_name} ({self.email})"
-        self.assertEqual(str(self.user), "Иванов Иван (test@example.com)")
+        self.assertEqual(str(self.user), "Иванов Иван Иванович")
 
     def test_pereval_str(self):
         """Тест строкового представления перевала"""
-        # Добавим метод __str__ в модель Pereval:
-        # def __str__(self):
-        #     return self.title
         self.assertEqual(str(self.pereval), "Тестовый перевал")
 
     def test_image_relation(self):
@@ -141,3 +146,4 @@ class ModelTests(APITestCase):
 
         self.assertEqual(image.pereval.title, "Тестовый перевал")
         self.assertEqual(self.pereval.images.count(), 1)
+        self.assertEqual(str(image), "Тест фото")
